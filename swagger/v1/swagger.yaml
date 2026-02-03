@@ -13,7 +13,13 @@ paths:
     post:
       tags:
         - Doctors
-      summary: Creates a doctor
+      summary: Cadastrar médico
+      description: |
+        Registra um novo médico no sistema.
+        
+        Campos obrigatórios:
+        - **name**: Nome do médico
+        - **crm**: CRM do médico (deve ser único)
       requestBody:
         required: true
         content:
@@ -61,7 +67,16 @@ paths:
     get:
       tags:
         - Doctors
-      summary: Gets doctor balance for a period
+      summary: Consultar saldo consolidado de um médico por período
+      description: |
+        Retorna o saldo consolidado de um médico para um período específico.
+        
+        O saldo é calculado como:
+        - **production_total**: Soma de todas as produções no período
+        - **payout_total**: Soma de todos os repasses no período
+        - **net_balance**: Saldo líquido (production_total - payout_total)
+        
+        Apenas eventos dentro do período especificado são considerados no cálculo.
       parameters:
         - name: id
           in: path
@@ -102,7 +117,38 @@ paths:
     post:
       tags:
         - Financial Events
-      summary: Creates a financial event
+      summary: Criar evento financeiro (produção ou repasse)
+      description: |
+        Este endpoint permite registrar tanto **produções** quanto **repasses**.
+        
+        - **Produção**: Use `event_type: "production"` para registrar uma produção (valor positivo no saldo)
+        - **Repasse**: Use `event_type: "payout"` para registrar um repasse (valor negativo no saldo)
+        
+        Exemplo de produção:
+        ```json
+        {
+          "financial_event": {
+            "doctor_id": 1,
+            "event_type": "production",
+            "amount": 5000.00,
+            "date": "2024-01-15",
+            "hospital": "Hospital A"
+          }
+        }
+        ```
+        
+        Exemplo de repasse:
+        ```json
+        {
+          "financial_event": {
+            "doctor_id": 1,
+            "event_type": "payout",
+            "amount": 2000.00,
+            "date": "2024-01-15",
+            "hospital": "Hospital B"
+          }
+        }
+        ```
       requestBody:
         required: true
         content:
@@ -115,23 +161,28 @@ paths:
                   properties:
                     doctor_id:
                       type: integer
+                      description: ID do médico
                       example: 1
                     event_type:
                       type: string
                       enum:
                         - production
                         - payout
+                      description: Tipo do evento - "production" para produção, "payout" para repasse
                       example: production
                     amount:
                       type: number
                       format: float
+                      description: Valor do evento (deve ser maior que zero)
                       example: 1000.00
                     date:
                       type: string
                       format: date
+                      description: Data do evento (formato YYYY-MM-DD)
                       example: '2024-01-15'
                     hospital:
                       type: string
+                      description: Nome do hospital
                       example: Hospital Teste
                   required:
                     - doctor_id
@@ -139,15 +190,34 @@ paths:
                     - amount
                     - date
                     - hospital
+            examples:
+              production:
+                summary: Exemplo de produção
+                value:
+                  financial_event:
+                    doctor_id: 1
+                    event_type: production
+                    amount: 5000.00
+                    date: '2024-01-15'
+                    hospital: Hospital A
+              payout:
+                summary: Exemplo de repasse
+                value:
+                  financial_event:
+                    doctor_id: 1
+                    event_type: payout
+                    amount: 2000.00
+                    date: '2024-01-15'
+                    hospital: Hospital B
       responses:
         '201':
-          description: financial event created
+          description: Evento financeiro criado com sucesso
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/FinancialEvent'
         '422':
-          description: invalid request
+          description: Dados inválidos
           content:
             application/json:
               schema:
