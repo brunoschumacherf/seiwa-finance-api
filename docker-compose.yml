@@ -14,5 +14,6 @@ services:
       - "3000:3000"
     environment:
       DATABASE_URL: postgresql://postgres:password@db:5432/seiwa_development
+      RAILS_ENV: development
     depends_on:
       - db

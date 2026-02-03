@@ -1,0 +1,224 @@
+openapi: 3.0.1
+info:
+  title: Seiwa Finance API V1
+  version: v1
+  description: API para gerenciamento financeiro de médicos e eventos financeiros
+servers:
+  - url: http://localhost:3000
+    variables:
+      defaultHost:
+        default: localhost:3000
+paths:
+  /doctors:
+    post:
+      tags:
+        - Doctors
+      summary: Creates a doctor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                doctor:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                      example: Dr. Bruno
+                    crm:
+                      type: string
+                      example: "123456"
+                  required:
+                    - name
+                    - crm
+      responses:
+        '201':
+          description: doctor created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  name:
+                    type: string
+                  crm:
+                    type: string
+                required:
+                  - id
+                  - name
+                  - crm
+        '422':
+          description: invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /doctors/{id}/balance:
+    get:
+      tags:
+        - Doctors
+      summary: Gets doctor balance for a period
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Doctor ID
+        - name: start_date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          description: Start date (YYYY-MM-DD)
+          example: '2024-01-01'
+        - name: end_date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          description: End date (YYYY-MM-DD)
+          example: '2024-01-31'
+      responses:
+        '200':
+          description: balance retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BalanceReport'
+        '404':
+          description: doctor not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /financial_events:
+    post:
+      tags:
+        - Financial Events
+      summary: Creates a financial event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                financial_event:
+                  type: object
+                  properties:
+                    doctor_id:
+                      type: integer
+                      example: 1
+                    event_type:
+                      type: string
+                      enum:
+                        - production
+                        - payout
+                      example: production
+                    amount:
+                      type: number
+                      format: float
+                      example: 1000.00
+                    date:
+                      type: string
+                      format: date
+                      example: '2024-01-15'
+                    hospital:
+                      type: string
+                      example: Hospital Teste
+                  required:
+                    - doctor_id
+                    - event_type
+                    - amount
+                    - date
+                    - hospital
+      responses:
+        '201':
+          description: financial event created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinancialEvent'
+        '422':
+          description: invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  schemas:
+    Doctor:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        crm:
+          type: string
+      required:
+        - name
+        - crm
+    FinancialEvent:
+      type: object
+      properties:
+        id:
+          type: integer
+        doctor_id:
+          type: integer
+        event_type:
+          type: string
+          enum:
+            - production
+            - payout
+        amount:
+          type: number
+          format: float
+        date:
+          type: string
+          format: date
+        hospital:
+          type: string
+      required:
+        - doctor_id
+        - event_type
+        - amount
+        - date
+        - hospital
+    BalanceReport:
+      type: object
+      properties:
+        doctor_name:
+          type: string
+        crm:
+          type: string
+        period:
+          type: object
+          properties:
+            start:
+              type: string
+              format: date
+            end:
+              type: string
+              format: date
+        production_total:
+          type: number
+          format: float
+        payout_total:
+          type: number
+          format: float
+        net_balance:
+          type: number
+          format: float
+    Error:
+      type: object
+      properties:
+        errors:
+          type: object
