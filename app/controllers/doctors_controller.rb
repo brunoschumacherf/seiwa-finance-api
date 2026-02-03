@@ -8,6 +8,12 @@ class DoctorsController < ApplicationController
     end
   end
 
+  def balance
+    doctor = Doctor.find(params[:id])
+    report = doctor.balance_for_period(params[:start_date], params[:end_date])
+    render json: report
+  end
+
   private
 
   def doctor_params
